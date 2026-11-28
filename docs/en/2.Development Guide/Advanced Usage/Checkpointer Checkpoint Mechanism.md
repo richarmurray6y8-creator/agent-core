@@ -212,6 +212,14 @@ post_workflow_execute
     └─ Interruption needed → save state
 ```
 
+### Replay after process termination
+
+Successful workflow supersteps commit state in memory. When the workflow pauses to request input or the engine catches an execution error, the engine saves the graph and workflow state to the configured checkpointer. If the process terminates between checkpoints, a persistent checkpointer can recover the last saved state. Resume with the same workflow ID and session ID and pass `InteractiveInput`, including the answer if the saved workflow is waiting for one.
+
+Components executed after the last saved checkpoint can run again, including components in a completed loop iteration. For example, if a workflow saves a checkpoint before entering a writer–reviewer loop and the process terminates during the second writer pass, recovery can run the first writer and reviewer again.
+
+To avoid repeating expensive work, persist completed results under a stable key derived from the workflow session, component, and logical input or revision. Reuse the stored result when the same key is encountered again. For external writes, pass that key to the destination's idempotency mechanism or commit the write and its completion record in the same transaction.
+
 ## Using Checkpoints
 
 ### Configuring Checkpoint in Runner
