@@ -196,7 +196,12 @@ async def test_sandbox_transports_only_overlay(monkeypatch: pytest.MonkeyPatch) 
 async def test_background_process_keeps_launch_snapshot(tmp_path: Path) -> None:
     shell = ShellOperation("shell", OperationMode.LOCAL, "test", LocalWorkConfig())
     output = tmp_path / "member.txt"
-    code = "import os,pathlib,time; time.sleep(.2); pathlib.Path('member.txt').write_text(os.environ['JW_MEMBER'])"
+    code = (
+        "import os,pathlib,time; time.sleep(.2); "
+        "staged = pathlib.Path('member.tmp'); "
+        "staged.write_text(os.environ['JW_MEMBER']); "
+        "staged.replace('member.txt')"
+    )
     command = _python_command(code)
     with execution_environment_scope(ExecutionEnvironment({"JW_MEMBER": "alice"})):
         result = await shell.execute_cmd_background(command, cwd=str(tmp_path), grace=0.01)
