@@ -90,8 +90,8 @@ class AsyncStreamQueue:
         if self._closed:
             raise RuntimeError("StreamQueue is already closed")
 
-        stream_item = await asyncio.wait_for(self._stream_queue.get(),
-                                             timeout if timeout and timeout > 0 else None)
+        async with asyncio.timeout(timeout if timeout and timeout > 0 else None):
+            stream_item = await self._stream_queue.get()
         self._stream_queue.task_done()
         self._received_count += 1
         log_stream_chunk(
@@ -112,7 +112,8 @@ class AsyncStreamQueue:
         )
 
         try:
-            await asyncio.wait_for(self._stream_queue.join(), timeout if timeout and timeout > 0 else None)
+            async with asyncio.timeout(timeout if timeout and timeout > 0 else None):
+                await self._stream_queue.join()
         except asyncio.TimeoutError:
             session_logger.error(
                 "StreamQueue close timeout, force clearing queue",
